@@ -1,0 +1,83 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:FindFirstChildOfClass("PlayerGui") or player:WaitForChild("PlayerGui")
+
+-- Criando o botão arrastável
+local mainButton = Instance.new("TextButton")
+mainButton.Size = UDim2.new(0, 200, 0, 50)
+mainButton.Position = UDim2.new(0.1, 0, 0.1, 0)
+mainButton.Text = "👻 Void FE 👻"
+mainButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+mainButton.Parent = screenGui
+mainButton.Draggable = true
+mainButton.Active = true
+mainButton.AutoButtonColor = true
+
+-- Variáveis de controle
+local voidPosition = Vector3.new(30238, 124843, 56405) -- Posição fixa da plataforma
+local storedPosition = nil -- Guarda a posição original
+local inVoid = false -- Controle do estado
+local platform = nil -- Plataforma fixa
+local seat = nil -- Assento para sentar
+
+-- Criar a plataforma permanente
+platform = Instance.new("Part")
+platform.Size = Vector3.new(20, 2, 20) -- Tamanho da plataforma
+platform.Position = voidPosition
+platform.Anchored = true
+platform.BrickColor = BrickColor.new("Bright blue") -- Cor azul para identificação
+platform.Material = Enum.Material.Neon
+platform.Parent = game.Workspace
+
+-- Criar um assento (Seat) na plataforma
+seat = Instance.new("Seat")
+seat.Size = Vector3.new(4, 2, 4)
+seat.Position = voidPosition + Vector3.new(0, 2, 0) -- Um pouco acima da plataforma
+seat.Anchored = true
+seat.BrickColor = BrickColor.new("Bright green") -- Cor verde para diferenciar
+seat.Material = Enum.Material.SmoothPlastic
+seat.Parent = game.Workspace
+
+-- Função para teleportar para a plataforma e sentar
+local function teleportToVoid()
+    storedPosition = humanoidRootPart.Position -- Guarda a posição original
+
+    -- Teleporta o personagem para o assento
+    humanoidRootPart.CFrame = seat.CFrame + Vector3.new(0, 2, 0) -- Posição exata do assento
+    
+    -- Faz o personagem se sentar
+    task.wait(0.1) -- Pequeno delay para evitar bugs
+    humanoid.Sit = true
+
+    -- Mantém a câmera onde estava
+    game.Workspace.CurrentCamera.CameraSubject = nil
+
+    inVoid = true
+end
+
+-- Função para sair do Void e pular antes de voltar
+local function returnFromVoid()
+    if storedPosition then
+        -- Faz o personagem pular primeiro
+        humanoid.Jump = true
+        task.wait(0.2) -- Pequeno delay para garantir que saiu do assento
+
+        -- Teleporta de volta para a posição original
+        humanoidRootPart.CFrame = CFrame.new(storedPosition)
+        game.Workspace.CurrentCamera.CameraSubject = humanoid -- Retorna a câmera pro player
+    end
+    inVoid = false
+end
+
+-- Evento de clique no botão
+mainButton.MouseButton1Click:Connect(function()
+    if inVoid then
+        returnFromVoid() -- Se já está no Void, pula e volta
+    else
+        teleportToVoid() -- Se não, some para a plataforma e senta
+    end
+end)
